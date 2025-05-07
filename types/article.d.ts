@@ -1,0 +1,14 @@
+export type Article = {
+  id?: string,
+  created_at?: string,
+  title: string,
+  summary: string,
+  content: string,
+  cover_url: string | null,
+  category_id: string | null,
+  status: 'draft' | 'published',
+}
+
+export type Articles = Article[]
+
+
