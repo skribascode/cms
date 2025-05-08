@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import type { Article } from '@/types/article'
+import type { Post } from '~/types/post'
 
 definePageMeta({
   layout: 'admin'
@@ -9,8 +9,8 @@ useAdminGuard()
 
 const supabase = useSupabaseClient()
 
-// Ref unique pour tout l'article
-const article = ref<Article>({
+// Ref unique pour tout le post
+const post = ref<Post>({
   title: '',
   summary: '',
   content: '',
@@ -25,27 +25,27 @@ const tags = ref<string[]>([])
 const selectedTags = ref<string[]>([])
 const categories = ref<string[]>([])
 
-const createArticle = async () => {
+const createPost = async () => {
   error.value = ''
   success.value = false
 
-  if (!article.value.title || !article.value.summary || !article.value.content) {
+  if (!post.value.title || !post.value.summary || !post.value.content) {
     error.value = 'Tous les champs sont requis'
     return
   }
 
-  const articleData = {
-    title: article.value.title,
-    summary: article.value.summary,
-    content: article.value.content,
-    status: article.value.status,
-    cover_url: article.value.cover_url || null,
-    category_id: article.value.category_id
+  const postData = {
+    title: post.value.title,
+    summary: post.value.summary,
+    content: post.value.content,
+    status: post.value.status,
+    cover_url: post.value.cover_url || null,
+    category_id: post.value.category_id
   }
 
-  const { error: insertError, data: newArticle } = await supabase
+  const { error: insertError, data: newPost } = await supabase
     .from('articles')
-    .insert(articleData)
+    .insert(postData)
     .select()
     .single()
 
@@ -57,7 +57,7 @@ const createArticle = async () => {
   // Insertion des tags uniquement si des tags sont sélectionnés
   if (selectedTags.value.length > 0) {
     const tagInserts = selectedTags.value.map(tagId => ({
-      article_id: newArticle.id,
+      article_id: newPost.id,
       tag_id: tagId
     }))
 
@@ -72,7 +72,7 @@ const createArticle = async () => {
   }
 
   // Réinitialiser le formulaire après une création réussie
-  article.value = {
+  post.value = {
     title: '',
     summary: '',
     content: '',
@@ -101,10 +101,10 @@ onMounted(async () => {
     <h1 class='text-3xl font-bold mb-6'>Nouvel article</h1>
 
     <div class='space-y-4'>
-      <ImageUploader v-model='article.cover_url' :article-id="article.title" />
+      <ImageUploader v-model='post.cover_url' :post-title="post.title" />
 
       <!-- Sélection de catégorie -->
-      <select v-model='article.category_id' class='w-full p-3 border rounded'>
+      <select v-model='post.category_id' class='w-full p-3 border rounded'>
         <option :value='null'>Choisir une catégorie</option>
         <option v-for='cat in categories' :key='cat.id' :value='cat.id'>
           {{ cat.name }}
@@ -131,24 +131,24 @@ onMounted(async () => {
       </div>
 
       <input
-        v-model='article.title'
+        v-model='post.title'
         type='text'
         placeholder='Titre'
         class='w-full p-3 border rounded'
       >
       <textarea
-        v-model='article.summary'
+        v-model='post.summary'
         placeholder='Résumé'
         class='w-full p-3 border rounded h-24'
       />
       <textarea
-        v-model='article.content'
+        v-model='post.content'
         placeholder='Contenu'
         class='w-full p-3 border rounded h-48'
       />
 
       <select
-        v-model='article.status'
+        v-model='post.status'
         class='w-full p-3 border rounded'
       >
         <option value='draft'>Brouillon</option>
@@ -161,7 +161,7 @@ onMounted(async () => {
         </NuxtLink>
         <button
           class='bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors'
-          @click='createArticle'
+          @click='createPost'
         >
           Publier
         </button>

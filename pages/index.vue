@@ -1,20 +1,20 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
-const articles = ref([])
+const posts = ref([])
 
-async function getTodos() {
+async function getPosts() {
   const { data } = await supabase.from('articles').select()
-  articles.value = data
+  posts.value = data
 }
 
 onMounted(() => {
-  getTodos()
+  getPosts()
 })
 </script>
 
 <template>
-  <ul v-if="articles.length">
-    <li v-for="article in articles" :key="article.id">{{ article.name }}</li>
+  <ul v-if="posts.length">
+    <li v-for="post in posts" :key="post.id">{{ post.title }}</li>
   </ul>
   <p v-else>No articles found.</p>
 </template>

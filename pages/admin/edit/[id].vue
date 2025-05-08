@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import type { Article } from '@/types/article'
+import type { Post } from '~/types/post'
 
 definePageMeta({
   layout: 'admin'
@@ -11,7 +11,7 @@ const supabase = useSupabaseClient()
 const route = useRoute()
 const id = route.params.id as string
 
-const article = ref<Article>({
+const post = ref<Post>({
   id,
   title: '',
   summary: '',
@@ -28,7 +28,7 @@ const categories = ref<string[]>([])
 const tags = ref<string[]>([])
 const selectedTags = ref<string[]>([])
 
-const fetchArticle = async () => {
+const fetchPost = async () => {
   // Récupérer l'article avec sa catégorie
   const { data, error: fetchError } = await supabase
     .from('articles')
@@ -43,8 +43,8 @@ const fetchArticle = async () => {
   }
 
   // Mise à jour de l'article avec les données récupérées
-  article.value = {
-    ...article.value,
+  post.value = {
+    ...post.value,
     title: data.title,
     summary: data.summary,
     content: data.content,
@@ -54,24 +54,24 @@ const fetchArticle = async () => {
   }
 
   // Récupération des tags de l'article
-  const { data: articleTags, error: tagsError } = await supabase
+  const { data: postTags, error: tagsError } = await supabase
     .from('article_tags')
     .select('tag_id')
     .eq('article_id', id)
 
-  if (!tagsError && articleTags) {
-    selectedTags.value = articleTags.map(tag => tag.tag_id)
+  if (!tagsError && postTags) {
+    selectedTags.value = postTags.map(tag => tag.tag_id)
   }
 
   loading.value = false
 }
 
-const updateArticle = async () => {
+const updatePost = async () => {
   error.value = ''
   success.value = false
 
   // Vérification des champs obligatoires
-  if (!article.value.title || !article.value.summary || !article.value.content) {
+  if (!post.value.title || !post.value.summary || !post.value.content) {
     error.value = 'Tous les champs sont requis'
     return
   }
@@ -80,12 +80,12 @@ const updateArticle = async () => {
   const { error: updateError } = await supabase
     .from('articles')
     .update({
-      title: article.value.title,
-      summary: article.value.summary,
-      content: article.value.content,
-      status: article.value.status,
-      cover_url: article.value.cover_url || null,
-      category_id: article.value.category_id
+      title: post.value.title,
+      summary: post.value.summary,
+      content: post.value.content,
+      status: post.value.status,
+      cover_url: post.value.cover_url || null,
+      category_id: post.value.category_id
     })
     .eq('id', id)
 
@@ -131,7 +131,7 @@ onMounted(async () => {
   tags.value = tagsData || []
 
   // Récupérer les données de l'article
-  await fetchArticle()
+  await fetchPost()
 })
 </script>
 
@@ -153,13 +153,13 @@ onMounted(async () => {
 
         <div class="p-5">
           <!-- Aperçu de l'image actuelle -->
-          <div v-if="article.cover_url" class="mb-4">
-            <img :src="article.cover_url" alt="Image de couverture" class="h-48 w-full object-cover rounded-lg" >
+          <div v-if="post.cover_url" class="mb-4">
+            <img :src="post.cover_url" alt="Image de couverture" class="h-48 w-full object-cover rounded-lg" >
           </div>
 
           <div class="space-y-4">
             <!-- Composant MediaSelector intégré avec son bouton -->
-            <MediaSelector v-model="article.cover_url" />
+            <MediaSelector v-model="post.cover_url" />
 
             <!-- Séparateur ou texte -->
             <div class="flex items-center gap-3">
@@ -171,8 +171,8 @@ onMounted(async () => {
             <!-- Composant pour uploader une nouvelle image -->
             <div>
               <ImageUploader
-                v-model="article.cover_url"
-                :article-title="article.title"
+                v-model="post.cover_url"
+                :post-title="post.title"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ onMounted(async () => {
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
             <input
-              v-model="article.title"
+              v-model="post.title"
               type="text"
               placeholder="Titre de l'article"
               class="w-full p-3 bg-gray-50 border-0 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
@@ -201,7 +201,7 @@ onMounted(async () => {
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
             <select
-              v-model="article.category_id"
+              v-model="post.category_id"
               class="w-full p-3 bg-gray-50 border-0 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
             >
               <option :value="null">Choisir une catégorie</option>
@@ -242,7 +242,7 @@ onMounted(async () => {
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Résumé</label>
             <textarea
-              v-model="article.summary"
+              v-model="post.summary"
               placeholder="Résumé de l'article"
               class="w-full p-3 bg-gray-50 border-0 rounded-xl text-gray-800 h-24 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
             />
@@ -252,7 +252,7 @@ onMounted(async () => {
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Contenu</label>
             <textarea
-              v-model="article.content"
+              v-model="post.content"
               placeholder="Contenu de l'article"
               class="w-full p-3 bg-gray-50 border-0 rounded-xl text-gray-800 h-48 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
             />
@@ -262,7 +262,7 @@ onMounted(async () => {
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
             <select
-              v-model="article.status"
+              v-model="post.status"
               class="w-full p-3 bg-gray-50 border-0 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
             >
               <option value="draft">Brouillon</option>
@@ -282,7 +282,7 @@ onMounted(async () => {
         </NuxtLink>
         <button
           class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-5 rounded-xl font-medium shadow-sm hover:shadow-indigo-200 transition-all hover:translate-y-[-1px]"
-          @click="updateArticle"
+          @click="updatePost"
         >
           Mettre à jour
         </button>

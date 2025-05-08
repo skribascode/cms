@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 const props = defineProps<{
   modelValue: string | null
-  articleTitle?: string // Nouvel prop pour l'ID de l'article (optionnel)
+  postTitle?: string // Nouvel prop pour l'ID de l'article (optionnel)
 }>()
 
 const emit = defineEmits(['update:modelValue', 'success'])
@@ -53,7 +53,7 @@ const uploadFile = async (file: File) => {
 
   // Format de nom de fichier : articleId_timestamp.extension
   // Si articleId n'est pas fourni, utiliser un identifiant aléatoire
-  const articleIdPrefix = props.articleTitle || 'img'
+  const articleIdPrefix = props.postTitle || 'img'
   const fileName = `${articleIdPrefix}_${timestamp}.${extension}`
 
   errorMessage.value = ''

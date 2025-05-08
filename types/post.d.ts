@@ -1,4 +1,4 @@
-export type Article = {
+export type Post = {
   id?: string,
   created_at?: string,
   title: string,
@@ -9,6 +9,6 @@ export type Article = {
   status: 'draft' | 'published',
 }
 
-export type Articles = Article[]
+export type Posts = Post[]
 
 

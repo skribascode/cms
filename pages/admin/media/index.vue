@@ -5,12 +5,30 @@ definePageMeta({
 
 useAdminGuard()
 
+interface MediaImage {
+  id: string
+  name: string
+  url: string
+  created_at: string
+  size: number
+  linkedPosts: Array<{ id: string; title: string; cover_url: string }>
+  isLinked: boolean
+}
+
+interface FileSizeFormatter {
+  (bytes: number): string;
+}
+
 const supabase = useSupabaseClient()
-const images = ref<any[]>([])
+const images = ref<MediaImage[]>([])
 const loading = ref(true)
 const searchQuery = ref('')
 const selectedFilter = ref('all')
 const imageUploadedUrl = ref('')
+const showCleanupModal = ref(false)
+const cleanupLoading = ref(false)
+const cleanupSuccess = ref(false)
+const cleanupCount = ref(0)
 
 // Récupération des images du bucket
 const fetchImages = async () => {
@@ -31,11 +49,11 @@ const fetchImages = async () => {
     }
 
     // Récupérer les articles pour vérifier les associations
-    const { data: articles, error: articlesError } = await supabase
+    const { data: posts, error: postsError } = await supabase
       .from('articles')
       .select('id, title, cover_url')
 
-    if (articlesError) throw articlesError
+    if (postsError) throw postsError
 
     // Créer les URLs publiques pour chaque image
     const imageList = await Promise.all(storageData.map(async (file) => {
@@ -47,10 +65,10 @@ const fetchImages = async () => {
           .from('article-images')
           .getPublicUrl(file.name)
 
-        // Trouver les articles liés à cette image
-        const linkedArticles = articles?.filter(article => {
-          const isLinked = article.cover_url === data.publicUrl ||
-                          (article.cover_url && article.cover_url.includes(file.name))
+        // Trouver les posts liés à cette image
+        const linkedPosts = posts?.filter(post => {
+          const isLinked = post.cover_url === data.publicUrl ||
+                          (post.cover_url && post.cover_url.includes(file.name))
           return isLinked
         }) || []
 
@@ -60,15 +78,15 @@ const fetchImages = async () => {
           url: data.publicUrl,
           created_at: file.created_at,
           size: file.metadata?.size || 0,
-          linkedArticles,
-          isLinked: linkedArticles.length > 0
+          linkedPosts,
+          isLinked: linkedPosts.length > 0
         }
       }
       return null
     }))
 
     // Filtrer pour ne garder que les images valides
-    images.value = imageList.filter(Boolean)
+    images.value = imageList.filter((img): img is MediaImage => img !== null)
   } catch (error) {
     console.error('Erreur lors du chargement des images:', error)
   } finally {
@@ -76,8 +94,7 @@ const fetchImages = async () => {
   }
 }
 
-// Formater la taille du fichier en KB ou MB
-const formatFileSize = (bytes) => {
+const formatFileSize: FileSizeFormatter = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B'
   else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
   else return (bytes / 1048576).toFixed(1) + ' MB'
@@ -109,16 +126,6 @@ const uploadImageSuccess = async () => {
   await fetchImages()
   imageUploadedUrl.value = ''
 }
-
-onMounted(() => {
-  fetchImages()
-})
-
-// Ajouter ces variables pour la modal de nettoyage
-const showCleanupModal = ref(false)
-const cleanupLoading = ref(false)
-const cleanupSuccess = ref(false)
-const cleanupCount = ref(0)
 
 // Fonction pour compter les images non liées
 const countUnlinkedImages = () => {
@@ -166,6 +173,10 @@ const cleanupUnlinkedImages = async () => {
     cleanupLoading.value = false
   }
 }
+
+onMounted(() => {
+  fetchImages()
+})
 </script>
 
 <template>
@@ -296,7 +307,7 @@ const cleanupUnlinkedImages = async () => {
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <span>{{ image.linkedArticles.length }}</span>
+              <span>{{ image.linkedPosts.length }}</span>
             </div>
           </NuxtLink>
 

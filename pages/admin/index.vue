@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import type { Articles } from '@/types/article'
+import type { Posts } from '@/types/post'
 
 definePageMeta({
   layout: 'admin'
@@ -9,10 +9,10 @@ useAdminGuard()
 
 const supabase = useSupabaseClient()
 
-const articles = ref<Articles[]>([])
+const posts = ref<Posts[]>([])
 const loading = ref(true)
 
-const fetchArticles = async () => {
+const fetchPosts = async () => {
   const { data, error } = await supabase
     .from('articles')
     .select()
@@ -23,11 +23,11 @@ const fetchArticles = async () => {
     return
   }
 
-  articles.value = data as Articles[]
+  posts.value = data as Posts[]
   loading.value = false
 }
 
-const deleteArticle = async (id: string) => {
+const deletePost = async (id: string) => {
   if (!confirm('Supprimer cet article ?')) return
 
   const { error } = await supabase.from('articles').delete().eq('id', id)
@@ -37,12 +37,12 @@ const deleteArticle = async (id: string) => {
     return
   }
 
-  await fetchArticles()
+  await fetchPosts()
 }
 
 
 onMounted(() => {
-  fetchArticles()
+  fetchPosts()
 })
 </script>
 
@@ -62,7 +62,7 @@ onMounted(() => {
               type="text"
               placeholder="Rechercher..."
               class="pl-10 pr-4 py-2 bg-gray-50 border-0 rounded-xl text-sm text-gray-800 w-full md:w-64 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
-            />
+            >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -83,14 +83,14 @@ onMounted(() => {
       <!-- État de chargement avec animation -->
       <div v-if="loading" class="flex justify-center items-center py-20">
         <div class="relative">
-          <div class="h-16 w-16 rounded-full border-t-2 border-b-2 border-indigo-500 animate-spin"></div>
-          <div class="h-12 w-12 rounded-full border-t-2 border-b-2 border-purple-500 animate-spin absolute top-2 left-2"></div>
+          <div class="h-16 w-16 rounded-full border-t-2 border-b-2 border-indigo-500 animate-spin"/>
+          <div class="h-12 w-12 rounded-full border-t-2 border-b-2 border-purple-500 animate-spin absolute top-2 left-2"/>
         </div>
       </div>
 
       <!-- Message d'absence d'articles -->
-      <div v-else-if="articles.length === 0" class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-        <img src="https://illustrations.popsy.co/amber/digital-nomad.svg" alt="No content" class="w-48 h-48 mx-auto mb-6" />
+      <div v-else-if="posts.length === 0" class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+        <img src="https://illustrations.popsy.co/amber/digital-nomad.svg" alt="No content" class="w-48 h-48 mx-auto mb-6" >
         <p class="text-xl font-medium text-gray-700">Aucun article pour le moment</p>
         <p class="text-gray-500 mt-2 mb-6">Commencez à créer du contenu pour votre site</p>
         <NuxtLink to="/admin/create" class="inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-5 rounded-xl font-medium gap-2 shadow-sm hover:shadow-md transition-all">
@@ -104,16 +104,16 @@ onMounted(() => {
       <!-- Liste des articles -->
       <div v-else class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <div
-          v-for="article in articles"
-          :key="article.id"
+          v-for="post in posts"
+          :key="post.id"
           class="bg-white rounded-2xl overflow-hidden border-0 shadow-sm hover:shadow-md transition-all group"
         >
           <!-- Image de couverture -->
           <div class="h-48 relative overflow-hidden">
             <!-- Image réelle si disponible -->
-            <div v-if="article.cover_url" class="absolute inset-0">
-              <img :src="article.cover_url" alt="Couverture" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+            <div v-if="post.cover_url" class="absolute inset-0">
+              <img :src="post.cover_url" alt="Couverture" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" >
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"/>
             </div>
 
             <!-- Fallback avec gradient moderne si pas d'image -->
@@ -130,14 +130,14 @@ onMounted(() => {
               <span
                 :class="[
                   'text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-md shadow-sm',
-                  article.status === 'published'
+                 post.status === 'published'
                     ? 'bg-green-500/90 text-white'
                     : 'bg-amber-500/90 text-white'
                 ]"
               >
                 <div class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                  {{ article.status === 'published' ? 'Publié' : 'Brouillon' }}
+                  <span class="w-1.5 h-1.5 rounded-full bg-white"/>
+                  {{ post.status === 'published' ? 'Publié' : 'Brouillon' }}
                 </div>
               </span>
             </div>
@@ -145,20 +145,22 @@ onMounted(() => {
 
           <!-- Contenu de l'article -->
           <div class="p-5">
-            <h2 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">{{ article.title }}</h2>
-            <p class="text-gray-500 text-sm line-clamp-2 mb-4">{{ article.summary }}</p>
+            <h2 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+              {{ post.title }}
+            </h2>
+            <p class="text-gray-500 text-sm line-clamp-2 mb-4">{{ post.summary }}</p>
 
             <div class="flex items-center justify-between">
               <p class="text-xs text-gray-400 flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                {{ new Date(article.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                {{ new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) }}
               </p>
 
               <div class="flex gap-2">
                 <NuxtLink
-                  :to="`/admin/edit/${article.id}`"
+                  :to="`/admin/edit/${post.id}`"
                   class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
                   title="Modifier"
                 >
@@ -168,8 +170,8 @@ onMounted(() => {
                 </NuxtLink>
                 <button
                   class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                  @click="deleteArticle(article.id)"
                   title="Supprimer"
+                  @click="deletePost(post.id)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
