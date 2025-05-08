@@ -26,7 +26,7 @@ const fetchImageDetails = async () => {
     // Récupérer la liste des fichiers pour trouver celui qui correspond à l'ID
     const { data: storageData, error: storageError } = await supabase
       .storage
-      .from('article-images')  // Correction du nom du bucket
+      .from('media')  // Correction du nom du bucket
       .list()
 
     if (storageError) throw storageError
@@ -39,12 +39,12 @@ const fetchImageDetails = async () => {
     // Créer l'URL publique pour cette image
     const { data: publicURL } = supabase
       .storage
-      .from('article-images')  // Correction du nom du bucket
+      .from('media')  // Correction du nom du bucket
       .getPublicUrl(targetFile.name)
 
     // Récupérer les articles qui utilisent cette image
     const { data: posts, error: postsError } = await supabase
-      .from('articles')
+      .from('posts')
       .select('id, title, cover_url')
       .or(`cover_url.eq.${publicURL.publicUrl},cover_url.ilike.%${targetFile.name}%`)
 
@@ -76,7 +76,7 @@ const fetchAvailablePosts = async () => {
   loadingPosts.value = true
   try {
     const { data, error } = await supabase
-      .from('articles')
+      .from('posts')
       .select('id, title, cover_url')
       .order('title', { ascending: true })
 
@@ -100,7 +100,7 @@ const linkImageToPost = async () => {
   try {
     // Mise à jour de l'article avec l'URL de l'image
     const { error } = await supabase
-      .from('articles')
+      .from('posts')
       .update({ cover_url: image.value.url })
       .eq('id', selectedPostId.value)
 
@@ -108,7 +108,7 @@ const linkImageToPost = async () => {
 
     // Récupérer les informations de l'article mis à jour
     const { data: postData } = await supabase
-      .from('articles')
+      .from('posts')
       .select('id, title, cover_url')
       .eq('id', selectedPostId.value)
       .single()

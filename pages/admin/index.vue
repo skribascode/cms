@@ -14,7 +14,7 @@ const loading = ref(true)
 
 const fetchPosts = async () => {
   const { data, error } = await supabase
-    .from('articles')
+    .from('posts')
     .select()
     .order('created_at', { ascending: false })
 
@@ -30,7 +30,7 @@ const fetchPosts = async () => {
 const deletePost = async (id: string) => {
   if (!confirm('Supprimer cet article ?')) return
 
-  const { error } = await supabase.from('articles').delete().eq('id', id)
+  const { error } = await supabase.from('posts').delete().eq('id', id)
 
   if (error) {
     console.error(error.message)

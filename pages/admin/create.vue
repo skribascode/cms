@@ -44,7 +44,7 @@ const createPost = async () => {
   }
 
   const { error: insertError, data: newPost } = await supabase
-    .from('articles')
+    .from('posts')
     .insert(postData)
     .select()
     .single()
@@ -57,12 +57,12 @@ const createPost = async () => {
   // Insertion des tags uniquement si des tags sont sélectionnés
   if (selectedTags.value.length > 0) {
     const tagInserts = selectedTags.value.map(tagId => ({
-      article_id: newPost.id,
+      post_id: newPost.id,
       tag_id: tagId
     }))
 
     const { error: tagsError } = await supabase
-      .from('article_tags')
+      .from('posts_tags')
       .insert(tagInserts)
 
     if (tagsError) {
@@ -101,7 +101,32 @@ onMounted(async () => {
     <h1 class='text-3xl font-bold mb-6'>Nouvel article</h1>
 
     <div class='space-y-4'>
-      <ImageUploader v-model='post.cover_url' :post-title="post.title" />
+      <div class="p-5">
+          <!-- Aperçu de l'image actuelle -->
+          <div v-if="post.cover_url" class="mb-4">
+            <img :src="post.cover_url" alt="Image de couverture" class="h-48 w-full object-cover rounded-lg" >
+          </div>
+
+          <div class="space-y-4">
+            <!-- Composant MediaSelector intégré avec son bouton -->
+            <MediaSelector v-model="post.cover_url" />
+
+            <!-- Séparateur ou texte -->
+            <div class="flex items-center gap-3">
+              <div class="flex-1 h-px bg-gray-200"/>
+              <span class="text-sm text-gray-400">ou</span>
+              <div class="flex-1 h-px bg-gray-200"/>
+            </div>
+
+            <!-- Composant pour uploader une nouvelle image -->
+            <div>
+              <ImageUploader
+                v-model="post.cover_url"
+                :post-title="post.title"
+              />
+            </div>
+          </div>
+        </div>
 
       <!-- Sélection de catégorie -->
       <select v-model='post.category_id' class='w-full p-3 border rounded'>

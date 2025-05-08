@@ -3,7 +3,7 @@ const supabase = useSupabaseClient()
 const posts = ref([])
 
 async function getPosts() {
-  const { data } = await supabase.from('articles').select()
+  const { data } = await supabase.from('posts').select()
   posts.value = data
 }
 

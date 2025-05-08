@@ -31,7 +31,7 @@ const selectedTags = ref<string[]>([])
 const fetchPost = async () => {
   // Récupérer l'article avec sa catégorie
   const { data, error: fetchError } = await supabase
-    .from('articles')
+    .from('posts')
     .select(`*, category_id`)
     .eq('id', id)
     .single()
@@ -55,9 +55,9 @@ const fetchPost = async () => {
 
   // Récupération des tags de l'article
   const { data: postTags, error: tagsError } = await supabase
-    .from('article_tags')
+    .from('posts_tags')
     .select('tag_id')
-    .eq('article_id', id)
+    .eq('post_id', id)
 
   if (!tagsError && postTags) {
     selectedTags.value = postTags.map(tag => tag.tag_id)
@@ -78,7 +78,7 @@ const updatePost = async () => {
 
   // Mise à jour de l'article
   const { error: updateError } = await supabase
-    .from('articles')
+    .from('posts')
     .update({
       title: post.value.title,
       summary: post.value.summary,
@@ -96,19 +96,19 @@ const updatePost = async () => {
 
   // Mise à jour des tags - d'abord supprimer les anciens
   await supabase
-    .from('article_tags')
+    .from('posts_tags')
     .delete()
-    .eq('article_id', id)
+    .eq('post_id', id)
 
   // Ajouter les nouveaux tags sélectionnés
   if (selectedTags.value.length > 0) {
     const tagInserts = selectedTags.value.map(tagId => ({
-      article_id: id,
+      post_id: id,
       tag_id: tagId
     }))
 
     const { error: tagsError } = await supabase
-      .from('article_tags')
+      .from('posts_tags')
       .insert(tagInserts)
 
     if (tagsError) {

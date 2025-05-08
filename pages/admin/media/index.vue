@@ -37,7 +37,7 @@ const fetchImages = async () => {
   try {
     const { data: storageData, error: storageError } = await supabase
       .storage
-      .from('article-images')
+      .from('media')
       .list('', { sortBy: { column: 'name', order: 'asc' } })
 
     if (storageError) throw storageError
@@ -50,7 +50,7 @@ const fetchImages = async () => {
 
     // Récupérer les articles pour vérifier les associations
     const { data: posts, error: postsError } = await supabase
-      .from('articles')
+      .from('posts')
       .select('id, title, cover_url')
 
     if (postsError) throw postsError
@@ -62,7 +62,7 @@ const fetchImages = async () => {
         // Obtention de l'URL publique
         const { data } = supabase
           .storage
-          .from('article-images')
+          .from('media')
           .getPublicUrl(file.name)
 
         // Trouver les posts liés à cette image
@@ -150,7 +150,7 @@ const cleanupUnlinkedImages = async () => {
     for (const image of unlinkedImages) {
       await supabase
         .storage
-        .from('article-images')
+        .from('media')
         .remove([image.name])
     }
 

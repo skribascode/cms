@@ -23,7 +23,7 @@ const fetchImages = async () => {
   try {
     const { data: storageData, error: storageError } = await supabase
       .storage
-      .from('article-images')
+      .from('media')
       .list('', { sortBy: { column: 'name', order: 'asc' } })
 
     if (storageError) throw storageError
@@ -39,7 +39,7 @@ const fetchImages = async () => {
       if (file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
         const { data } = supabase
           .storage
-          .from('article-images')
+          .from('media')
           .getPublicUrl(file.name)
 
         return {

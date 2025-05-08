@@ -53,15 +53,15 @@ const uploadFile = async (file: File) => {
 
   // Format de nom de fichier : articleId_timestamp.extension
   // Si articleId n'est pas fourni, utiliser un identifiant aléatoire
-  const articleIdPrefix = props.postTitle || 'img'
-  const fileName = `${articleIdPrefix}_${timestamp}.${extension}`
+  const postIdPrefix = props.postTitle || 'img'
+  const fileName = `${postIdPrefix}_${timestamp}.${extension}`
 
   errorMessage.value = ''
   uploading.value = true
 
   try {
     const { error } = await supabase.storage
-      .from('article-images')
+      .from('media')
       .upload(fileName, file)
 
     if (error) {
@@ -71,7 +71,7 @@ const uploadFile = async (file: File) => {
     }
 
     const { data } = supabase.storage
-      .from('article-images')
+      .from('media')
       .getPublicUrl(fileName)
 
     // Mise à jour locale de l'aperçu
@@ -124,12 +124,13 @@ watch(() => props.modelValue, (newValue) => {
       :class="[
         'border-2 border-dashed rounded-lg p-8 transition-colors cursor-pointer text-center',
         uploading ? 'border-blue-400 bg-blue-50' :
-          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
+        dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
       ]"
       @click="openFileDialog"
       @dragover="handleDragOver"
       @dragleave="handleDragLeave"
-      @drop="handleDrop">
+      @drop="handleDrop"
+    >
 
       <div class="flex flex-col items-center justify-center space-y-3">
         <svg
