@@ -1,7 +1,6 @@
 <script setup lang='ts'>
 const props = defineProps<{
   modelValue: string | null
-  postTitle?: string // Nouvel prop pour l'ID de l'article (optionnel)
 }>()
 
 const emit = defineEmits(['update:modelValue', 'success'])
@@ -50,10 +49,15 @@ const getFileExtension = (filename: string): string => {
 const uploadFile = async (file: File) => {
   const timestamp = Date.now()
   const extension = getFileExtension(file.name)
+  const validExtensions = ['png', 'jpg', 'jpeg', 'svg']
 
-  // Format de nom de fichier : articleId_timestamp.extension
-  // Si articleId n'est pas fourni, utiliser un identifiant aléatoire
-  const postIdPrefix = props.postTitle || 'img'
+
+  if (!validExtensions.includes(extension.toLowerCase())) {
+    errorMessage.value = 'Format de fichier non valide. Veuillez télécharger une image au format PNG, JPG, JPEG ou SVG.'
+    return
+  }
+
+  const postIdPrefix = 'img'
   const fileName = `${postIdPrefix}_${timestamp}.${extension}`
 
   errorMessage.value = ''
@@ -147,7 +151,7 @@ watch(() => props.modelValue, (newValue) => {
         </div>
 
         <p v-if="!uploading" class="text-sm text-gray-500">
-          PNG, JPG ou GIF (max. 10MB)
+          PNG, JPG, JPEG ou SVG (max. 10MB)
         </p>
 
         <div v-if="uploading" class="flex items-center space-x-2 text-blue-600">
@@ -167,7 +171,10 @@ watch(() => props.modelValue, (newValue) => {
       class="hidden"
       @change="upload">
 
-    <div v-if="errorMessage" class="bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm">
+    <div
+      v-if="errorMessage"
+      class="mb-4 bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm"
+    >
       {{ errorMessage }}
     </div>
   </div>

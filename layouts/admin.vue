@@ -22,7 +22,7 @@ const logout = async () => {
       <!-- En-tête avec logo stylisé -->
       <div class="relative mb-8">
         <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-          CMS Admin
+          SkribPress
         </h1>
         <div class="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mt-2"/>
       </div>
