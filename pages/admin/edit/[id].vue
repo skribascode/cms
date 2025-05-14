@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import type { Post } from '@/types/post'
+import type { FormattedPost } from '@/types/post'
 
 definePageMeta({
   layout: 'admin'
@@ -7,136 +7,139 @@ definePageMeta({
 
 useAdminGuard()
 
-const supabase = useSupabaseClient()
 const route = useRoute()
 const id = route.params.id as string
 
-const post = ref<Post>({
-  id,
-  title: '',
-  summary: '',
-  content: '',
-  status: 'draft',
-  cover_url: '',
-  category_id: null as string | null
-})
-
+const post = ref<FormattedPost | null>(null)
 const loading = ref(true)
 const error = ref('')
 const success = ref(false)
-const categories = ref<string[]>([])
-const tags = ref<string[]>([])
+const categories = ref<{ id: string; name: string }[]>([]);
+const tags = ref<{ id: string; name: string }[]>([]);
 const selectedTags = ref<string[]>([])
 
 const fetchPost = async () => {
-  // Récupérer l'article avec sa catégorie
-  const { data, error: fetchError } = await supabase
-    .from('posts')
-    .select(`*, category_id`)
-    .eq('id', id)
-    .single()
+  try {
+    const { data: res, error: fetchError } = await useFetch<FormattedPost>(`/api/posts/${id}`, {
+      method: 'GET'
+    })
 
-  if (fetchError || !data) {
-    error.value = fetchError?.message || 'Article introuvable'
+    if (fetchError.value || !res.value) {
+      error.value = fetchError.value?.message || 'Article introuvable'
+      loading.value = false
+      return
+    }
+
+    post.value = res.value
+
+    // S'assurer que nous travaillons avec un tableau de tags
+    selectedTags.value = Array.isArray(res.value.tags)
+      ? res.value.tags.map(tag => tag.id)
+      : [];
+
+  } catch (error) {
+    console.error('Erreur lors du chargement des posts', error)
+  } finally {
     loading.value = false
-    return
   }
-
-  // Mise à jour de l'article avec les données récupérées
-  post.value = {
-    ...post.value,
-    title: data.title,
-    summary: data.summary,
-    content: data.content,
-    status: data.status,
-    cover_url: data.cover_url || '',
-    category_id: data.category_id
-  }
-
-  // Récupération des tags de l'article
-  const { data: postTags, error: tagsError } = await supabase
-    .from('posts_tags')
-    .select('tag_id')
-    .eq('post_id', id)
-
-  if (!tagsError && postTags) {
-    selectedTags.value = postTags.map(tag => tag.tag_id)
-  }
-
-  loading.value = false
 }
 
 const updatePost = async () => {
-  error.value = ''
-  success.value = false
-
-  // Vérification des champs obligatoires
-  if (!post.value.title || !post.value.summary || !post.value.content) {
-    error.value = 'Tous les champs sont requis'
-    return
+  if (!post.value) {
+    error.value = 'Aucun article à mettre à jour';
+    return;
   }
 
-  // Mise à jour de l'article
-  const { error: updateError } = await supabase
-    .from('posts')
-    .update({
+  error.value = '';
+  success.value = false;
+
+  if (!post.value.title || !post.value.summary || !post.value.content) {
+    error.value = 'Tous les champs sont requis';
+    return;
+  }
+
+  try {
+    // S'assurer que selectedTags.value est bien un tableau non-vide
+    if (!Array.isArray(selectedTags.value)) {
+      selectedTags.value = [];
+    }
+
+    // Ne pas filtrer avec Boolean car cela peut éliminer des IDs valides comme "0"
+    const uniqueTags = Array.from(new Set(selectedTags.value));
+
+    // Assurer que tag_ids est bien un tableau
+    const tag_ids = [...uniqueTags];
+
+    // Créer le corps de la requête et le logger pour débogage
+    const requestBody = {
       title: post.value.title,
       summary: post.value.summary,
       content: post.value.content,
       status: post.value.status,
       cover_url: post.value.cover_url || null,
-      category_id: post.value.category_id
-    })
-    .eq('id', id)
+      category_id: post.value.category_id,
+      tag_ids: tag_ids // On a déjà vérifié que c'est un tableau
+    };
 
-  if (updateError) {
-    error.value = updateError.message
-    return
-  }
+    const { error: updateError } = await useFetch(`/api/posts/${id}`, {
+      method: 'PUT',
+      body: requestBody
+    });
 
-  // Mise à jour des tags - d'abord supprimer les anciens
-  await supabase
-    .from('posts_tags')
-    .delete()
-    .eq('post_id', id)
-
-  // Ajouter les nouveaux tags sélectionnés
-  if (selectedTags.value.length > 0) {
-    const tagInserts = selectedTags.value.map(tagId => ({
-      post_id: id,
-      tag_id: tagId
-    }))
-
-    const { error: tagsError } = await supabase
-      .from('posts_tags')
-      .insert(tagInserts)
-
-    if (tagsError) {
-      console.error('Erreur lors de la mise à jour des tags:', tagsError)
+    if (updateError?.value) {
+      error.value = updateError.value.message || 'Erreur inconnue';
+      return;
     }
-  }
 
-  success.value = true
-}
+    // Recharger l'article pour vérifier les changements
+    await fetchPost();
+    success.value = true;
+  } catch (err) {
+    console.error('Erreur lors de la mise à jour de l’article', err);
+    error.value = 'Une erreur est survenue lors de la mise à jour';
+  }
+};
 
 // Charger les catégories et tags au montage du composant
 onMounted(async () => {
-  // Récupérer les catégories et tags disponibles en parallèle
-  const [{ data: catData }, { data: tagsData }] = await Promise.all([
-    supabase.from('categories').select(),
-    supabase.from('tags').select()
-  ])
+  try {
+    // Récupérer les catégories via l'API
+    const { data: categoriesRes, error: categoriesError } = await useFetch<{ id: string; name: string }[]>('/api/categories', {
+      method: 'GET'
+    });
 
-  categories.value = catData || []
-  tags.value = tagsData || []
+    if (categoriesError?.value) {
+      error.value = categoriesError.value.message || 'Erreur lors du chargement des catégories';
+      return;
+    }
 
-  // Récupérer les données de l'article
-  await fetchPost()
-})
+    categories.value = categoriesRes?.value || [];
+
+    // Récupérer les tags via l'API
+    const { data: tagsRes, error: tagsError } = await useFetch<{ id: string; name: string }[]>('/api/tags', {
+      method: 'GET'
+    });
+
+    if (tagsError?.value) {
+      error.value = tagsError.value.message || 'Erreur lors du chargement des tags';
+      return;
+    }
+
+    tags.value = tagsRes?.value || [];
+
+    // Récupérer les données de l'article
+    await fetchPost();
+  } catch (err) {
+    console.error('Erreur lors du chargement des données', err);
+    error.value = 'Une erreur est survenue lors du chargement des données';
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <template>
-  <div class='p-8 max-w-3xl mx-auto'>
+  <div v-if="post" class='p-8 max-w-3xl mx-auto'>
     <h1 class='text-3xl font-bold mb-6'>Modifier l'article</h1>
 
     <div v-if='loading' class="py-8 text-center text-gray-500">
@@ -230,6 +233,7 @@ onMounted(async () => {
                   type="checkbox"
                   :value="tag.id"
                   class="hidden"
+                  @change="handleTagChange"
                 >
                 <span v-if="selectedTags.includes(tag.id)" class="w-2 h-2 rounded-full bg-indigo-500"/>
                 <span v-else class="w-2 h-2 rounded-full border border-gray-300"/>

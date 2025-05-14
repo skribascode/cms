@@ -7,37 +7,37 @@ definePageMeta({
 
 useAdminGuard()
 
-const supabase = useSupabaseClient()
-
 const posts = ref<Posts[]>([])
 const loading = ref(true)
 
 const fetchPosts = async () => {
-  const { data, error } = await supabase
-    .from('posts')
-    .select()
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error(error.message)
-    return
+  try {
+    const res = await $fetch<Posts[]>('/api/posts')
+    posts.value = res
+  } catch (error) {
+    console.error('Erreur lors du chargement des posts', error)
+  } finally {
+    loading.value = false
   }
-
-  posts.value = data as Posts[]
-  loading.value = false
 }
 
 const deletePost = async (id: string) => {
   if (!confirm('Supprimer cet article ?')) return
 
-  const { error } = await supabase.from('posts').delete().eq('id', id)
+  try {
+    const { error } = await useFetch(`/api/posts/${id}`, {
+      method: 'DELETE'
+    })
 
-  if (error) {
-    console.error(error.message)
-    return
+    if (error.value) {
+      console.error(error.value.message)
+      return
+    }
+
+    await fetchPosts()
+  } catch (err) {
+    console.error('Erreur lors de la suppression de l\'article', err)
   }
-
-  await fetchPosts()
 }
 
 
@@ -103,10 +103,11 @@ onMounted(() => {
 
       <!-- Liste des articles -->
       <div v-else class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        <div
+        <NuxtLink
           v-for="post in posts"
           :key="post.id"
-          class="bg-white rounded-2xl overflow-hidden border-0 shadow-sm hover:shadow-md transition-all group"
+          :to="`/admin/edit/${post.id}`"
+          class="bg-white rounded-2xl overflow-hidden border-0 shadow-sm hover:shadow-md transition-all group block cursor-pointer"
         >
           <!-- Image de couverture -->
           <div class="h-48 relative overflow-hidden">
@@ -148,7 +149,31 @@ onMounted(() => {
             <h2 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
               {{ post.title }}
             </h2>
-            <p class="text-gray-500 text-sm line-clamp-2 mb-4">{{ post.summary }}</p>
+            <p class="text-gray-500 text-sm line-clamp-2 mb-3">{{ post.summary }}</p>
+
+            <!-- Catégorie et tags -->
+            <div class="mb-4">
+              <!-- Catégorie -->
+              <div class="flex items-center mb-2" v-if="post.category">
+                <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-md font-medium flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  {{ post.category.name }}
+                </span>
+              </div>
+
+              <!-- Tags -->
+              <div class="flex flex-wrap gap-1" v-if="post.tags && post.tags.length">
+                <span
+                  v-for="tag in post.tags"
+                  :key="tag.id"
+                  class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-md"
+                >
+                  #{{ tag.name }}
+                </span>
+              </div>
+            </div>
 
             <div class="flex items-center justify-between">
               <p class="text-xs text-gray-400 flex items-center gap-1">
@@ -159,19 +184,19 @@ onMounted(() => {
               </p>
 
               <div class="flex gap-2">
-                <NuxtLink
-                  :to="`/admin/edit/${post.id}`"
-                  class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
+                <button
+                  class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors z-10"
                   title="Modifier"
+                  @click.prevent
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
-                </NuxtLink>
+                </button>
                 <button
-                  class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                  class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors z-10"
                   title="Supprimer"
-                  @click="deletePost(post.id)"
+                  @click.prevent="deletePost(post.id)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -180,7 +205,7 @@ onMounted(() => {
               </div>
             </div>
           </div>
-        </div>
+        </NuxtLink>
       </div>
     </div>
   </div>
