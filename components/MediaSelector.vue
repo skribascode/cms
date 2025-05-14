@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
+interface MediaImage {
+  id: string;
+  name: string;
+  url: string;
+  created_at: string;
+  size: number;
+}
+
+withDefaults(defineProps<{
   modelValue: string
   buttonLabel?: string
   buttonStyle?: 'default' | 'minimal'
@@ -11,7 +19,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits(['update:modelValue', 'select'])
 
 const supabase = useSupabaseClient()
-const images = ref<any[]>([])
+const images = ref<MediaImage[]>([])
 const loading = ref(true)
 const searchQuery = ref('')
 const showModal = ref(false)
@@ -53,7 +61,7 @@ const fetchImages = async () => {
       return null
     }))
 
-    images.value = imageList.filter(Boolean)
+    images.value = imageList.filter((img): img is MediaImage => img !== null) as MediaImage[]
   } catch (error) {
     console.error('Erreur lors du chargement des images:', error)
   } finally {

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { Posts } from '@/types/post'
+import { useClipboard, usePermission } from '@vueuse/core'
+import { shallowRef } from 'vue'
+
+import type { Post } from '@/types/post'
 
 interface MediaImage {
   id: string;
@@ -19,15 +22,22 @@ definePageMeta({
 
 useAdminGuard()
 
+// Copy to clipboard Vueuse
+const { isSupported, copy } = useClipboard()
+const permissionRead = usePermission('clipboard-read')
+const permissionWrite = usePermission('clipboard-write')
+
 const supabase = useSupabaseClient()
 const route = useRoute()
 const router = useRouter()
 const imageId = route.params.id as string
 const image = ref<MediaImage | null>(null)
+// For Copy to clipboard
+const input = shallowRef('')
 const loading = ref(true)
-const linkedPosts = ref<Posts[]>([])
+const linkedPosts = ref<Post[]>([])
 const showPostSelector = ref(false)
-const availablePosts = ref<Posts[]>([])
+const availablePosts = ref<Post[]>([])
 const loadingPosts = ref(false)
 const selectedPostId = ref('')
 const linkSuccess = ref(false)
@@ -75,6 +85,8 @@ const fetchImageDetails = async () => {
       metadata: targetFile.metadata,
     }
 
+    input.value = image.value.url
+
     linkedPosts.value = posts || []
 
   } catch (error) {
@@ -99,8 +111,8 @@ const fetchAvailablePosts = async () => {
 
     // Exclure les articles déjà liés à cette image
     availablePosts.value = (data?.filter(post =>
-      !linkedPosts.value.some((linked: Posts) => linked.id === post.id)
-    ) as Posts[] || [])
+      !linkedPosts.value.some((linked: Post) => linked.id === post.id)
+    ) as Post[] || [])
   } catch (error) {
     console.error("Erreur lors de la récupération des articles:", error)
   } finally {
@@ -116,7 +128,7 @@ const linkImageToPost = async () => {
     // Mise à jour de l'article avec l'URL de l'image
     const { error } = await supabase
       .from('posts')
-      .update({ cover_url: image.value.url })
+      .update({ cover_url: image.value?.url })
       .eq('id', selectedPostId.value)
 
     if (error) throw error
@@ -171,6 +183,8 @@ const deleteImage = async () => {
     }
 
     // Supprimer l'image du stockage
+    if (!image.value) throw new Error("L'image n'est pas disponible");
+
     const { error } = await supabase
       .storage
       .from('media')  // Correction du nom du bucket
@@ -186,15 +200,14 @@ const deleteImage = async () => {
   }
 }
 
-// Formater la taille du fichier
-const formatFileSize = (bytes) => {
+const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B'
   else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
   else return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
 // Formater la date
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('fr-FR', {
     day: 'numeric',
@@ -270,12 +283,16 @@ onMounted(() => {
                 <p class="text-sm text-gray-500">URL publique</p>
                 <div class="flex items-center gap-2">
                   <input
-                    type="text" :value="image.url" readonly
+                    v-model="input" type="text" readonly
                     class="text-xs p-2 bg-gray-50 border border-gray-200 rounded w-full"
-                    @click="($event.target as HTMLInputElement).select()" >
+                    @click="copy(input)"
+                  >
+
                   <button
-                    class="p-2 bg-gray-100 rounded hover:bg-gray-200" title="Copier l'URL"
-                    @click="navigator.clipboard.writeText(image.url)">
+                    v-if="isSupported && permissionRead && permissionWrite" class="p-2 bg-gray-100 rounded hover:bg-gray-200"
+                    title="Copier l'URL"
+                    @click="copy(input)"
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                       stroke="currentColor">

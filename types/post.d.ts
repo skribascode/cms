@@ -1,6 +1,6 @@
 export type Post = {
-  id?: string,
-  created_at?: string,
+  id: string,
+  created_at: string,
   title: string,
   summary: string,
   content: string,

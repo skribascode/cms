@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Post } from '@/types/post'
+import type { Post, Category, Tag } from '@/types/post'
 
 definePageMeta({
   layout: 'admin'
@@ -9,7 +9,7 @@ useAdminGuard()
 
 const supabase = useSupabaseClient()
 
-const post = ref<Post>({
+const post = ref<Partial<Post>>({
   title: '',
   summary: '',
   content: '',
@@ -20,9 +20,9 @@ const post = ref<Post>({
 const categorySearch = ref('')
 const error = ref('')
 const success = ref(false)
-const tags = ref<string[]>([])
+const tags = ref<Tag[]>([])
 const selectedTags = ref<string[]>([])
-const categories = ref<string[]>([])
+const categories = ref<Category[]>([])
 const tagSearch = ref('')
 
 const visibleTags = computed(() => {
@@ -121,7 +121,7 @@ const createPost = async () => {
     summary: '',
     content: '',
     status: 'draft',
-    cover_url: '',
+    cover_url: null,
     category_id: null
   }
   selectedTags.value = []
@@ -173,7 +173,10 @@ onMounted(async () => {
 
         <div class="space-y-4">
           <!-- Composant MediaSelector intégré avec son bouton -->
-          <MediaSelector v-model="post.cover_url" />
+          <MediaSelector
+            :model-value="post.cover_url || ''"
+            @update:model-value="val => post.cover_url = val || null"
+          />
 
           <!-- Séparateur ou texte -->
           <div class="flex items-center gap-3">
@@ -183,7 +186,10 @@ onMounted(async () => {
           </div>
 
           <div>
-            <ImageUploader v-model="post.cover_url" :post-title="post.title" />
+            <ImageUploader
+              :model-value="post.cover_url || ''"
+              @update:model-value="val => post.cover_url = val || null"
+            />
           </div>
         </div>
       </div>

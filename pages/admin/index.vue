@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import type { Posts } from '@/types/post'
+import type { FormattedPost } from '@/types/post'
 
 definePageMeta({
   layout: 'admin'
@@ -7,12 +7,14 @@ definePageMeta({
 
 useAdminGuard()
 
-const posts = ref<Posts[]>([])
+const posts = ref<FormattedPost[]>([])
 const loading = ref(true)
+const showDeleteModal = ref(false)
+const postToDelete = ref<string | null>(null)
 
 const fetchPosts = async () => {
   try {
-    const res = await $fetch<Posts[]>('/api/posts')
+    const res = await $fetch<FormattedPost[]>('/api/posts')
     posts.value = res
   } catch (error) {
     console.error('Erreur lors du chargement des posts', error)
@@ -21,11 +23,16 @@ const fetchPosts = async () => {
   }
 }
 
-const deletePost = async (id: string) => {
-  if (!confirm('Supprimer cet article ?')) return
+const openDeleteModal = (id: string) => {
+  postToDelete.value = id
+  showDeleteModal.value = true
+}
+
+const deletePost = async () => {
+  if (!postToDelete.value) return
 
   try {
-    const { error } = await useFetch(`/api/posts/${id}`, {
+    const { error } = await useFetch(`/api/posts/${postToDelete.value}`, {
       method: 'DELETE'
     })
 
@@ -35,11 +42,17 @@ const deletePost = async (id: string) => {
     }
 
     await fetchPosts()
+    showDeleteModal.value = false
+    postToDelete.value = null
   } catch (err) {
     console.error('Erreur lors de la suppression de l\'article', err)
   }
 }
 
+const cancelDelete = () => {
+  showDeleteModal.value = false
+  postToDelete.value = null
+}
 
 onMounted(() => {
   fetchPosts()
@@ -154,7 +167,7 @@ onMounted(() => {
             <!-- Catégorie et tags -->
             <div class="mb-4">
               <!-- Catégorie -->
-              <div class="flex items-center mb-2" v-if="post.category">
+              <div v-if="post.category" class="flex items-center mb-2">
                 <span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-md font-medium flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -164,7 +177,7 @@ onMounted(() => {
               </div>
 
               <!-- Tags -->
-              <div class="flex flex-wrap gap-1" v-if="post.tags && post.tags.length">
+              <div v-if="post.tags && post.tags.length" class="flex flex-wrap gap-1">
                 <span
                   v-for="tag in post.tags"
                   :key="tag.id"
@@ -196,7 +209,7 @@ onMounted(() => {
                 <button
                   class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors z-10"
                   title="Supprimer"
-                  @click.prevent="deletePost(post.id)"
+                  @click.prevent="openDeleteModal(post.id)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -206,6 +219,82 @@ onMounted(() => {
             </div>
           </div>
         </NuxtLink>
+      </div>
+    </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <!-- Overlay avec flou -->
+      <div
+        class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"
+        @click="cancelDelete"
+      />
+
+      <!-- Modal -->
+      <div class="relative min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transition-all transform">
+          <!-- En-tête -->
+          <div class="p-6 border-b border-gray-100">
+            <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 text-red-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              Confirmation de suppression
+            </h3>
+          </div>
+
+          <!-- Corps de la modal -->
+          <div class="p-6">
+            <div class="mb-6">
+              <p class="text-gray-700 mb-4">
+                Êtes-vous sûr de vouloir supprimer cet article ?
+              </p>
+              <p class="text-gray-500">
+                Cette action est irréversible.
+              </p>
+            </div>
+
+            <div class="flex justify-between">
+              <button
+                class="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+                @click="cancelDelete"
+              >
+                Annuler
+              </button>
+              <button
+                class="py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                @click="deletePost"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                Confirmer la suppression
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
