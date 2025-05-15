@@ -1,5 +1,6 @@
 <script setup lang='ts'>
 const supabase = useSupabaseClient()
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -11,10 +12,17 @@ const login = async () => {
   })
 
   if (error) {
-    alert('Erreur de connexion')
+    toast.error({
+      title: 'Erreur de connexion',
+      message: error.message || 'Identifiants incorrects'
+    })
     return
   }
 
+  toast.success({
+    title: 'Succès',
+    message: 'Connexion réussie'
+  })
   useRouter().push('/admin')
 }
 </script>

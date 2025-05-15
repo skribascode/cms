@@ -7,10 +7,12 @@ definePageMeta({
 
 useAdminGuard()
 
+const toast = useToast()
 const posts = ref<FormattedPost[]>([])
 const loading = ref(true)
 const showDeleteModal = ref(false)
 const postToDelete = ref<string | null>(null)
+const postToDeleteTitle = ref('')
 
 const fetchPosts = async () => {
   try {
@@ -18,13 +20,18 @@ const fetchPosts = async () => {
     posts.value = res
   } catch (error) {
     console.error('Erreur lors du chargement des posts', error)
+    toast.error({
+      title: 'Erreur',
+      message: 'Impossible de charger les articles'
+    })
   } finally {
     loading.value = false
   }
 }
 
-const openDeleteModal = (id: string) => {
+const openDeleteModal = (id: string, title: string = '') => {
   postToDelete.value = id
+  postToDeleteTitle.value = title
   showDeleteModal.value = true
 }
 
@@ -38,14 +45,26 @@ const deletePost = async () => {
 
     if (error.value) {
       console.error(error.value.message)
+      toast.error({
+        title: 'Erreur',
+        message: `Impossible de supprimer l'article: ${error.value.message || 'Erreur inconnue'}`
+      })
       return
     }
 
     await fetchPosts()
     showDeleteModal.value = false
+    toast.success({
+      title: 'Succès',
+      message: `L'article "${postToDeleteTitle.value}" a été supprimé`
+    })
     postToDelete.value = null
   } catch (err) {
     console.error('Erreur lors de la suppression de l\'article', err)
+    toast.error({
+      title: 'Erreur',
+      message: 'Une erreur est survenue lors de la suppression'
+    })
   }
 }
 
@@ -210,7 +229,7 @@ onMounted(() => {
                 <button
                   class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors z-10"
                   title="Supprimer"
-                  @click.prevent="openDeleteModal(post.id)"
+                  @click.prevent="openDeleteModal(post.id, post.title)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

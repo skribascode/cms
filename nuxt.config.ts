@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxt/image',
     '@nuxtjs/supabase',
+    'nuxt-toast'
   ],
 
   vite: {

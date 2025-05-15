@@ -8,6 +8,7 @@ definePageMeta({
 useAdminGuard()
 
 const supabase = useSupabaseClient()
+const toast = useToast()
 
 const post = ref<Partial<Post>>({
   title: '',
@@ -18,8 +19,6 @@ const post = ref<Partial<Post>>({
   category_id: null
 })
 const categorySearch = ref('')
-const error = ref('')
-const success = ref(false)
 const tags = ref<Tag[]>([])
 const selectedTags = ref<string[]>([])
 const categories = ref<Category[]>([])
@@ -70,12 +69,12 @@ const visibleCategories = computed(() => {
 })
 
 const createPost = async () => {
-  error.value = ''
-  success.value = false
-
   if (!post.value.title || !post.value.summary || !post.value.content) {
-    error.value = 'Tous les champs sont requis'
-    return
+    toast.error({
+      title: 'Erreur',
+      message: 'Tous les champs sont requis'
+    });
+    return;
   }
 
   const postData = {
@@ -94,8 +93,11 @@ const createPost = async () => {
     .single()
 
   if (insertError) {
-    error.value = insertError.message
-    return
+    toast.error({
+      title: 'Erreur',
+      message: insertError.message
+    });
+    return;
   }
 
   // Insertion des tags uniquement si des tags sont sélectionnés
@@ -111,7 +113,10 @@ const createPost = async () => {
 
     if (tagsError) {
       console.error('Erreur lors de l\'ajout des tags:', tagsError)
-      // On ne bloque pas la création de l'article si les tags échouent
+      toast.warning({
+        title: 'Attention',
+        message: 'L\'article a été créé mais certains tags n\'ont pas pu être ajoutés'
+      });
     }
   }
 
@@ -125,7 +130,10 @@ const createPost = async () => {
     category_id: null
   }
   selectedTags.value = []
-  success.value = true
+  toast.success({
+    title: 'Succès',
+    message: 'Article publié avec succès !'
+  });
 }
 
 const toggleTag = (tagId: string) => {
@@ -328,14 +336,6 @@ onMounted(async () => {
           Publier
         </button>
       </div>
-
-      <p v-if="error" class="text-red-500 bg-red-50 p-3 rounded">{{ error }}</p>
-      <p v-if="success" class="text-green-600 bg-green-50 p-3 rounded">
-        Article publié avec succès !
-        <button class="float-right text-sm hover:underline" @click="success = false">
-          Fermer
-        </button>
-      </p>
     </div>
   </div>
 </template>

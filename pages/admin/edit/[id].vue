@@ -9,6 +9,7 @@ useAdminGuard()
 
 const route = useRoute()
 const id = route.params.id as string
+const toast = useToast()
 
 const post = ref<FormattedPost | null>(null)
 const loading = ref(true)
@@ -71,7 +72,10 @@ const fetchPost = async () => {
     })
 
     if (fetchError.value || !res.value) {
-      error.value = fetchError.value?.message || 'Article introuvable'
+      toast.error({
+        title: 'Erreur',
+        message: fetchError.value?.message || 'Article introuvable'
+      })
       loading.value = false
       return
     }
@@ -85,6 +89,10 @@ const fetchPost = async () => {
 
   } catch (error) {
     console.error('Erreur lors du chargement des posts', error)
+    toast.error({
+      title: 'Erreur',
+      message: 'Impossible de charger l\'article'
+    })
   } finally {
     loading.value = false
   }
@@ -92,7 +100,7 @@ const fetchPost = async () => {
 
 const updatePost = async () => {
   if (!post.value) {
-    error.value = 'Aucun article à mettre à jour';
+    toast.error({ title: 'Erreur', message: 'Aucun article à mettre à jour' });
     return;
   }
 
@@ -100,7 +108,7 @@ const updatePost = async () => {
   success.value = false;
 
   if (!post.value.title || !post.value.summary || !post.value.content) {
-    error.value = 'Tous les champs sont requis';
+    toast.error({ title: 'Erreur', message: 'Tous les champs sont requis' });
     return;
   }
 
@@ -133,16 +141,25 @@ const updatePost = async () => {
     });
 
     if (updateError?.value) {
-      error.value = updateError.value.message || 'Erreur inconnue';
+      toast.error({
+        title: 'Erreur',
+        message: updateError.value.message || 'Erreur inconnue'
+      });
       return;
     }
 
     // Recharger l'article pour vérifier les changements
     await fetchPost();
-    success.value = true;
+    toast.success({
+      title: 'Succès',
+      message: 'Article modifié avec succès !'
+    });
   } catch (err) {
     console.error('Erreur lors de la mise à jour de l’article', err);
-    error.value = 'Une erreur est survenue lors de la mise à jour';
+    toast.error({
+      title: 'Erreur',
+      message: 'Une erreur est survenue lors de la mise à jour'
+    });
   }
 };
 
@@ -169,6 +186,12 @@ const isCategorySelected = (categoryId: string) => {
 
 // Charger les catégories et tags au montage du composant
 onMounted(async () => {
+  if (!id) {
+    toast.error({ title: 'Erreur', message: 'Aucun ID d\'article fourni' });
+    return;
+  }
+  loading.value = true;
+  error.value = '';
   try {
     // Récupérer les catégories via l'API
     const { data: categoriesRes, error: categoriesError } = await useFetch<{ id: string; name: string }[]>('/api/categories', {
@@ -176,7 +199,10 @@ onMounted(async () => {
     });
 
     if (categoriesError?.value) {
-      error.value = categoriesError.value.message || 'Erreur lors du chargement des catégories';
+      toast.error({
+        title: 'Erreur',
+        message: categoriesError.value.message || 'Erreur lors du chargement des catégories'
+      });
       return;
     }
 
@@ -188,7 +214,10 @@ onMounted(async () => {
     });
 
     if (tagsError?.value) {
-      error.value = tagsError.value.message || 'Erreur lors du chargement des tags';
+      toast.error({
+        title: 'Erreur',
+        message: tagsError.value.message || 'Erreur lors du chargement des tags'
+      });
       return;
     }
 
@@ -198,7 +227,10 @@ onMounted(async () => {
     await fetchPost();
   } catch (err) {
     console.error('Erreur lors du chargement des données', err);
-    error.value = 'Une erreur est survenue lors du chargement des données';
+    toast.error({
+      title: 'Erreur',
+      message: 'Une erreur est survenue lors du chargement des données'
+    });
   } finally {
     loading.value = false;
   }
@@ -429,33 +461,6 @@ onMounted(async () => {
         >
           Mettre à jour
         </button>
-      </div>
-
-      <!-- Notifications -->
-      <div v-if="error" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg text-red-700">
-        <div class="flex">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-          </svg>
-          {{ error }}
-        </div>
-      </div>
-
-      <div v-if="success" class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg text-green-700">
-        <div class="flex justify-between items-center">
-          <div class="flex">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            Article modifié avec succès !
-          </div>
-          <button
-            class="text-sm hover:underline"
-            @click="success = false"
-          >
-            Fermer
-          </button>
-        </div>
       </div>
     </div>
   </div>

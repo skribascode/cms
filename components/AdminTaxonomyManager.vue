@@ -5,6 +5,7 @@ const props = defineProps<{
 }>()
 
 const supabase = useSupabaseClient()
+const toast = useToast()
 
 const items = ref<{ id: string; name: string }[]>([])
 const newName = ref('')
@@ -19,6 +20,10 @@ const fetchItems = async () => {
 
   if (error) {
     console.error('Erreur de récupération des éléments:', error)
+    toast.error({
+      title: 'Erreur',
+      message: `Impossible de récupérer les ${props.title.toLowerCase()}: ${error.message}`
+    })
     loading.value = false
     return
   }
@@ -28,23 +33,52 @@ const fetchItems = async () => {
 }
 
 const createItem = async () => {
-  if (!newName.value.trim()) return
+  if (!newName.value.trim()) {
+    toast.warning({
+      title: 'Attention',
+      message: 'Veuillez saisir un nom'
+    })
+    return
+  }
 
   const { error } = await supabase.from(props.table).insert({ name: newName.value })
 
   if (error) {
     console.error('Erreur de création de l\'élément:', error)
+    toast.error({
+      title: 'Erreur',
+      message: `Impossible de créer ${props.title.toLowerCase().slice(0, -1)}: ${error.message}`
+    })
     return
   }
 
+  toast.success({
+    title: 'Succès',
+    message: `${props.title.slice(0, -1)} "${newName.value}" ajouté avec succès`
+  })
   newName.value = ''
   await fetchItems()
 }
 
-const deleteItem = async (id: string) => {
+const deleteItem = async (id: string, name: string) => {
   if (!confirm('Supprimer ?')) return
 
-  await supabase.from(props.table).delete().eq('id', id)
+  const { error } = await supabase.from(props.table).delete().eq('id', id)
+
+  if (error) {
+    console.error('Erreur de suppression:', error)
+    toast.error({
+      title: 'Erreur',
+      message: `Impossible de supprimer: ${error.message}`
+    })
+    return
+  }
+
+  toast.info({
+    title: 'Suppression effectuée',
+    message: `${props.title.slice(0, -1)} "${name}" supprimé`
+  })
+
   await fetchItems()
 }
 
@@ -54,9 +88,30 @@ const startEdit = (item: { id: string; name: string }) => {
 }
 
 const saveEdit = async () => {
-  if (!editItemId.value || !editName.value.trim()) return
+  if (!editItemId.value || !editName.value.trim()) {
+    toast.warning({
+      title: 'Attention',
+      message: 'Le nom ne peut pas être vide'
+    })
+    return
+  }
 
-  await supabase.from(props.table).update({ name: editName.value }).eq('id', editItemId.value)
+  const { error } = await supabase.from(props.table).update({ name: editName.value }).eq('id', editItemId.value)
+
+  if (error) {
+    console.error('Erreur de mise à jour:', error)
+    toast.error({
+      title: 'Erreur',
+      message: `Impossible de modifier: ${error.message}`
+    })
+    return
+  }
+
+  toast.success({
+    title: 'Succès',
+    message: `${props.title.slice(0, -1)} modifié avec succès`
+  })
+
   editItemId.value = ''
   editName.value = ''
   await fetchItems()
@@ -171,7 +226,7 @@ onMounted(fetchItems)
                 </button>
                 <button
                   class="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                  @click="deleteItem(item.id)"
+                  @click="deleteItem(item.id, item.name)"
                   title="Supprimer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
