@@ -108,8 +108,8 @@ watch(() => props.modelValue, (newValue) => {
 <template>
   <div class="space-y-4">
     <!-- Aperçu de l'image -->
-    <div v-if="imagePreview" class="relative group rounded-lg overflow-hidden shadow-md">
-      <img :src="imagePreview" class="w-full h-64 object-cover">
+    <div v-if="imagePreview" class="relative group rounded-lg overflow-hidden">
+      <img :src="imagePreview" class="h-48 w-full object-cover rounded-lg" alt="Aperçu de l'image" >
       <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-3">
         <button
           class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"

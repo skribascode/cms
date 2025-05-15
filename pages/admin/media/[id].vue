@@ -246,7 +246,7 @@ onMounted(() => {
       <div v-else-if="image" class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Image avec aperçu -->
         <div class="md:col-span-2 bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div class="bg-gray-100 p-1">
+          <div class="flex flex-col justify-center items-center h-full bg-white">
             <img :src="image.url" :alt="image.name" class="w-full h-auto object-contain max-h-[500px]" >
           </div>
         </div>

@@ -143,10 +143,10 @@ onMounted(() => {
             <div class="absolute top-4 right-4 flex items-center">
               <span
                 :class="[
-                  'text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-md shadow-sm',
+                  'inset-0 font-semibold text-xs px-3 py-1.5 rounded-full backdrop-blur-md shadow-sm',
                  post.status === 'published'
-                    ? 'bg-green-500/90 text-white'
-                    : 'bg-amber-500/90 text-white'
+                    ? 'bg-gradient-to-br from-teal-400 to-green-300 text-white'
+                    : 'bg-gradient-to-br from-amber-400 to-orange-300 text-white'
                 ]"
               >
                 <div class="flex items-center gap-1.5">
@@ -198,9 +198,10 @@ onMounted(() => {
 
               <div class="flex gap-2">
                 <button
+                  type="button"
                   class="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors z-10"
                   title="Modifier"
-                  @click.prevent
+                  @click="() => $router.push(`/admin/edit/${post.id}`)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

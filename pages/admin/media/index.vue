@@ -181,9 +181,9 @@ onMounted(() => {
 
 <template>
   <div class="bg-gray-50 min-h-screen p-6 lg:p-8">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto space-y-8">
       <!-- En-tête moderne avec recherche -->
-      <div class="bg-white rounded-2xl shadow-sm p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="bg-white rounded-2xl shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Médiathèque</h1>
           <p class="text-gray-500 text-sm mt-1">Gérez les images utilisées sur votre site</p>

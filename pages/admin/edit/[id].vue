@@ -155,14 +155,25 @@ onMounted(async () => {
         </div>
 
         <div class="p-5">
-          <!-- Aperçu de l'image actuelle -->
-          <div v-if="post.cover_url" class="mb-4">
-            <img :src="post.cover_url" alt="Image de couverture" class="h-48 w-full object-cover rounded-lg" >
+          <!-- Aperçu de l'image -->
+          <div class="mb-4">
+            <img
+              v-if="post.cover_url"
+              :src="post.cover_url"
+              alt="Image de couverture"
+              class="h-48 w-full object-cover rounded-lg"
+            >
+            <img
+              v-else
+              src="@/assets/images/default-image.jpeg"
+              alt="Image de couverture"
+              class="h-48 w-full object-cover rounded-lg"
+            >
           </div>
 
           <div class="space-y-4">
             <!-- Composant MediaSelector intégré avec son bouton -->
-            <MediaSelector v-model="post.cover_url" />
+            <MediaSelector :model-value="post.cover_url || ''" @update:model-value="post.cover_url = $event" />
 
             <!-- Séparateur ou texte -->
             <div class="flex items-center gap-3">
