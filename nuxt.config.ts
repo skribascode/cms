@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  devServer: {
+    port: 1979,
+  },
 
   modules: [
     '@nuxt/eslint',
@@ -11,7 +14,8 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxt/image',
     '@nuxtjs/supabase',
-    'nuxt-toast'
+    'nuxt-toast',
+    'dragon-editor',
   ],
 
   vite: {
