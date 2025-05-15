@@ -426,11 +426,9 @@ onMounted(async () => {
           <!-- Contenu -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Contenu</label>
-            <textarea
-              v-model="post.content"
-              placeholder="Contenu de l'article"
-              class="w-full p-3 bg-gray-50 border-0 rounded-xl text-gray-800 h-48 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
-            />
+            <div class="editor-area">
+              <DragonEditor v-model="post.content" />
+            </div>
           </div>
 
           <!-- Statut -->

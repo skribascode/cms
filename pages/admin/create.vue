@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// Cette page utilise maintenant l'API du serveur au lieu de Supabase directement
 import type { Post, Category, Tag } from '@/types/post'
 
 definePageMeta({
@@ -7,13 +8,13 @@ definePageMeta({
 
 useAdminGuard()
 
-const supabase = useSupabaseClient()
 const toast = useToast()
 
+const $editor = ref<DragonEditor>()
 const post = ref<Partial<Post>>({
   title: '',
   summary: '',
-  content: '',
+  content: [] as any, // Cast pour éviter les problèmes de type avec DragonEditor
   status: 'draft',
   cover_url: '',
   category_id: null
@@ -68,6 +69,21 @@ const visibleCategories = computed(() => {
   return categories.value
 })
 
+const uploadImageEvent = (file:File) => {
+        // Do upload Image
+
+
+        // Then add Image to editor
+        // $editor.value.addBlock({
+        //     type: "image",
+        //     maxWidth: number,
+        //     src: string,
+        //     width: number,
+        //     height: number,
+        //     caption: string,
+        //     classList: string[],
+        // });
+}
 const createPost = async () => {
   if (!post.value.title || !post.value.summary || !post.value.content) {
     toast.error({
@@ -77,63 +93,55 @@ const createPost = async () => {
     return;
   }
 
-  const postData = {
+  // Préparation des données pour l'API
+  const requestBody = {
     title: post.value.title,
     summary: post.value.summary,
     content: post.value.content,
     status: post.value.status,
     cover_url: post.value.cover_url || null,
-    category_id: post.value.category_id
+    category_id: post.value.category_id,
+    tag_ids: selectedTags.value // Inclure directement les tags pour que l'API les traite
   }
 
-  const { error: insertError, data: newPost } = await supabase
-    .from('posts')
-    .insert(postData)
-    .select()
-    .single()
+  try {
+    const { error } = await useFetch('/api/posts', {
+      method: 'POST',
+      body: requestBody
+    })
 
-  if (insertError) {
+    if (error.value) {
+      toast.error({
+        title: 'Erreur',
+        message: error.value.message || 'Une erreur est survenue lors de la création de l\'article'
+      });
+      return;
+    }
+
+    // Pas besoin d'insérer les tags séparément, car l'API s'en charge
+    toast.success({
+      title: 'Succès',
+      message: 'Article publié avec succès !'
+    });
+
+    // Réinitialiser le formulaire après une création réussie
+    post.value = {
+      title: '',
+      summary: '',
+      content: [],
+      status: 'draft',
+      cover_url: null,
+      category_id: null
+    }
+    selectedTags.value = []
+  } catch (err) {
+    console.error('Erreur lors de la création de l\'article:', err)
     toast.error({
       title: 'Erreur',
-      message: insertError.message
+      message: 'Une erreur est survenue lors de la création de l\'article'
     });
     return;
   }
-
-  // Insertion des tags uniquement si des tags sont sélectionnés
-  if (selectedTags.value.length > 0) {
-    const tagInserts = selectedTags.value.map(tagId => ({
-      post_id: newPost.id,
-      tag_id: tagId
-    }))
-
-    const { error: tagsError } = await supabase
-      .from('posts_tags')
-      .insert(tagInserts)
-
-    if (tagsError) {
-      console.error('Erreur lors de l\'ajout des tags:', tagsError)
-      toast.warning({
-        title: 'Attention',
-        message: 'L\'article a été créé mais certains tags n\'ont pas pu être ajoutés'
-      });
-    }
-  }
-
-  // Réinitialiser le formulaire après une création réussie
-  post.value = {
-    title: '',
-    summary: '',
-    content: '',
-    status: 'draft',
-    cover_url: null,
-    category_id: null
-  }
-  selectedTags.value = []
-  toast.success({
-    title: 'Succès',
-    message: 'Article publié avec succès !'
-  });
 }
 
 const toggleTag = (tagId: string) => {
@@ -157,14 +165,37 @@ const isCategorySelected = (categoryId: string) => {
 }
 
 onMounted(async () => {
-  // Récupérer les catégories et tags disponibles en parallèle
-  const [{ data: catData }, { data: tagsData }] = await Promise.all([
-    supabase.from('categories').select(),
-    supabase.from('tags').select()
-  ])
+  try {
+    // Récupérer les catégories et tags disponibles en parallèle via l'API
+    const [categoriesRes, tagsRes] = await Promise.all([
+      useFetch<Category[]>('/api/categories', { method: 'GET' }),
+      useFetch<Tag[]>('/api/tags', { method: 'GET' })
+    ]);
 
-  categories.value = catData || []
-  tags.value = tagsData || []
+    if (categoriesRes.error.value) {
+      toast.error({
+        title: 'Erreur',
+        message: categoriesRes.error.value.message || 'Erreur lors du chargement des catégories'
+      });
+    } else {
+      categories.value = categoriesRes.data.value || [];
+    }
+
+    if (tagsRes.error.value) {
+      toast.error({
+        title: 'Erreur',
+        message: tagsRes.error.value.message || 'Erreur lors du chargement des tags'
+      });
+    } else {
+      tags.value = tagsRes.data.value || [];
+    }
+  } catch (err) {
+    console.error('Erreur lors du chargement des données', err);
+    toast.error({
+      title: 'Erreur',
+      message: 'Une erreur est survenue lors du chargement des données'
+    });
+  }
 })
 </script>
 
@@ -318,7 +349,9 @@ onMounted(async () => {
 
       <input v-model="post.title" type="text" placeholder="Titre" class="w-full p-3 border rounded" >
       <textarea v-model="post.summary" placeholder="Résumé" class="w-full p-3 border rounded h-24" />
-      <textarea v-model="post.content" placeholder="Contenu" class="w-full p-3 border rounded h-48" />
+      <div class="editor-area">
+        <DragonEditor v-model="post.content" @uploadImageEvent="uploadImageEvent" ref="$editor"/>
+      </div>
 
       <select v-model="post.status" class="w-full p-3 border rounded">
         <option value="draft">Brouillon</option>

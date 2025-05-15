@@ -3,7 +3,7 @@ export type Post = {
   created_at: string,
   title: string,
   summary: string,
-  content: string,
+  content: [],
   cover_url: string | null,
   category_id: string | null,
   status: 'draft' | 'published',
