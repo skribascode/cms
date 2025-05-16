@@ -11,6 +11,16 @@ export type Post = {
 
 export type Posts = Post[]
 
+export type PostPayload = {
+  id: string;
+  title: string;
+  summary: string;
+  content: DEContentData | null;
+  cover_url: string | null;
+  category_id: string | null;
+  status: 'draft' | 'published';
+}
+
 export type Category = {
   id: string;
   name: string;

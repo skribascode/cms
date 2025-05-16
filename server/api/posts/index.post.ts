@@ -2,6 +2,8 @@
 import { serverSupabaseClient } from '#supabase/server'
 import { v4 as uuidv4 } from 'uuid';
 
+import type { PostPayload, Post, Tag } from '~/types/post'
+
 export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event);
   const body = await readBody(event);
@@ -10,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 1. Créer l'article avec un nouvel UUID
-    const newPost = {
+    const newPost: PostPayload = {
       id: uuidv4(),
       title,
       summary,
@@ -30,10 +32,12 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: postError.message });
     }
 
-    const postId = postData?.id || newPost.id;
+    const post = postData as Post;
+
+    const postId = post?.id;
 
     // 2. Traiter les tags si fournis
-    const processedTags = Array.isArray(tag_ids) ? tag_ids : tag_ids ? [tag_ids] : [];
+    const processedTags = Array.isArray(tag_ids) ? tag_ids : tag_ids ? [tag_ids] : [] as Tag[];
 
     if (processedTags.length > 0) {
       // Dédoublonner les tags
