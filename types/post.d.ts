@@ -3,7 +3,7 @@ export type Post = {
   created_at: string,
   title: string,
   summary: string,
-  content: [],
+  content: DEContentData | null,
   cover_url: string | null,
   category_id: string | null,
   status: 'draft' | 'published',
@@ -21,9 +21,15 @@ export type Tag = {
   name: string;
 };
 
+export type PostTag = {
+  tag_id: string;
+  tags: Tag;
+}
+export type PostsTags = PostTag[]
+
 export type PostWithRelations = Post & {
   categories: Category | null;
-  posts_tags: { tags: Tag }[] | { tags: Tag } | null;
+  posts_tags: PostsTags | null;
   category: Category | null;
   tags: Tag[];
 };

@@ -1,16 +1,7 @@
 // Get all posts with category + tags
 import { serverSupabaseClient } from '#supabase/server'
 
-// Définir les interfaces pour les données
-interface Tag {
-  id: string;
-  name: string;
-}
-
-interface PostTag {
-  tag_id: string;
-  tags: Tag;
-}
+import type { PostWithRelations, Tag, PostsTags } from '~/types/post'
 
 export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event)
@@ -35,15 +26,18 @@ export default defineEventHandler(async (event) => {
 
   if (error) throw createError({ statusCode: 500, statusMessage: error.message })
 
+    const posts = data as PostWithRelations[]
+
   // Transformer les données pour qu'elles soient plus faciles à utiliser côté client
-  const formattedPosts = data.map(post => {
+  const formattedPosts = posts.map(post => {
     // Vérifier si posts_tags est un tableau et non vide
     let tags: Tag[] = [];
 
     if (post.posts_tags && Array.isArray(post.posts_tags) && post.posts_tags.length > 0) {
-      tags = post.posts_tags
-        .filter((pt: PostTag) => pt && pt.tags)
-        .map((pt: PostTag) => ({
+      const postsTags = post.posts_tags as PostsTags;
+      tags = postsTags
+        .filter((pt) => pt && pt.tags)
+        .map((pt) => ({
           id: pt.tags.id,
           name: pt.tags.name
         }));

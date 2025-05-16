@@ -14,7 +14,7 @@ const $editor = ref<DragonEditor>()
 const post = ref<Partial<Post>>({
   title: '',
   summary: '',
-  content: [] as any, // Cast pour éviter les problèmes de type avec DragonEditor
+  content: [] as DEContentData,
   status: 'draft',
   cover_url: '',
   category_id: null
@@ -89,8 +89,8 @@ const createPost = async () => {
     toast.error({
       title: 'Erreur',
       message: 'Tous les champs sont requis'
-    });
-    return;
+    })
+    return
   }
 
   // Préparation des données pour l'API
@@ -114,15 +114,15 @@ const createPost = async () => {
       toast.error({
         title: 'Erreur',
         message: error.value.message || 'Une erreur est survenue lors de la création de l\'article'
-      });
-      return;
+      })
+      return
     }
 
     // Pas besoin d'insérer les tags séparément, car l'API s'en charge
     toast.success({
       title: 'Succès',
       message: 'Article publié avec succès !'
-    });
+    })
 
     // Réinitialiser le formulaire après une création réussie
     post.value = {
@@ -139,8 +139,8 @@ const createPost = async () => {
     toast.error({
       title: 'Erreur',
       message: 'Une erreur est survenue lors de la création de l\'article'
-    });
-    return;
+    })
+    return
   }
 }
 
@@ -170,31 +170,31 @@ onMounted(async () => {
     const [categoriesRes, tagsRes] = await Promise.all([
       useFetch<Category[]>('/api/categories', { method: 'GET' }),
       useFetch<Tag[]>('/api/tags', { method: 'GET' })
-    ]);
+    ])
 
     if (categoriesRes.error.value) {
       toast.error({
         title: 'Erreur',
         message: categoriesRes.error.value.message || 'Erreur lors du chargement des catégories'
-      });
+      })
     } else {
-      categories.value = categoriesRes.data.value || [];
+      categories.value = categoriesRes.data.value || []
     }
 
     if (tagsRes.error.value) {
       toast.error({
         title: 'Erreur',
         message: tagsRes.error.value.message || 'Erreur lors du chargement des tags'
-      });
+      })
     } else {
-      tags.value = tagsRes.data.value || [];
+      tags.value = tagsRes.data.value || []
     }
   } catch (err) {
-    console.error('Erreur lors du chargement des données', err);
+    console.error('Erreur lors du chargement des données', err)
     toast.error({
       title: 'Erreur',
       message: 'Une erreur est survenue lors du chargement des données'
-    });
+    })
   }
 })
 </script>
