@@ -84,9 +84,6 @@ const uploadFile = async (file: File) => {
     // Émission pour mettre à jour la propriété parent
     emit('update:modelValue', data.publicUrl)
     emit('success')
-
-    // Débogage
-    console.log('Image uploadée avec succès:', data.publicUrl)
   } catch (e) {
     console.error('Exception:', e)
     errorMessage.value = `Exception: ${e instanceof Error ? e.message : String(e)}`

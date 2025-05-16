@@ -15,8 +15,8 @@ const post = ref<FormattedPost | null>(null)
 const loading = ref(true)
 const error = ref('')
 const success = ref(false)
-const categories = ref<{ id: string; name: string }[]>([]);
-const tags = ref<{ id: string; name: string }[]>([]);
+const categories = ref<{ id: string; name: string }[]>([])
+const tags = ref<{ id: string; name: string }[]>([])
 const selectedTags = ref<string[]>([])
 const categorySearch = ref('')
 const tagSearch = ref('')
@@ -85,7 +85,7 @@ const fetchPost = async () => {
     // S'assurer que nous travaillons avec un tableau de tags
     selectedTags.value = Array.isArray(res.value.tags)
       ? res.value.tags.map(tag => tag.id)
-      : [];
+      : []
 
   } catch (error) {
     console.error('Erreur lors du chargement des posts', error)
@@ -100,29 +100,29 @@ const fetchPost = async () => {
 
 const updatePost = async () => {
   if (!post.value) {
-    toast.error({ title: 'Erreur', message: 'Aucun article à mettre à jour' });
-    return;
+    toast.error({ title: 'Erreur', message: 'Aucun article à mettre à jour' })
+    return
   }
 
-  error.value = '';
-  success.value = false;
+  error.value = ''
+  success.value = false
 
   if (!post.value.title || !post.value.summary || !post.value.content) {
-    toast.error({ title: 'Erreur', message: 'Tous les champs sont requis' });
-    return;
+    toast.error({ title: 'Erreur', message: 'Tous les champs sont requis' })
+    return
   }
 
   try {
     // S'assurer que selectedTags.value est bien un tableau non-vide
     if (!Array.isArray(selectedTags.value)) {
-      selectedTags.value = [];
+      selectedTags.value = []
     }
 
     // Ne pas filtrer avec Boolean car cela peut éliminer des IDs valides comme "0"
-    const uniqueTags = Array.from(new Set(selectedTags.value));
+    const uniqueTags = Array.from(new Set(selectedTags.value))
 
     // Assurer que tag_ids est bien un tableau
-    const tag_ids = [...uniqueTags];
+    const tag_ids = [...uniqueTags]
 
     // Créer le corps de la requête et le logger pour débogage
     const requestBody = {
@@ -132,20 +132,20 @@ const updatePost = async () => {
       status: post.value.status,
       cover_url: post.value.cover_url || null,
       category_id: post.value.category_id,
-      tag_ids: tag_ids // On a déjà vérifié que c'est un tableau
-    };
+      tag_ids: tag_ids
+    }
 
     const { error: updateError } = await useFetch(`/api/posts/${id}`, {
       method: 'PUT',
       body: requestBody
-    });
+    })
 
     if (updateError?.value) {
       toast.error({
         title: 'Erreur',
         message: updateError.value.message || 'Erreur inconnue'
-      });
-      return;
+      })
+      return
     }
 
     // Recharger l'article pour vérifier les changements
@@ -159,9 +159,9 @@ const updatePost = async () => {
     toast.error({
       title: 'Erreur',
       message: 'Une erreur est survenue lors de la mise à jour'
-    });
+    })
   }
-};
+}
 
 const toggleTag = (tagId: string) => {
   if (selectedTags.value.includes(tagId)) {
@@ -187,54 +187,54 @@ const isCategorySelected = (categoryId: string) => {
 // Charger les catégories et tags au montage du composant
 onMounted(async () => {
   if (!id) {
-    toast.error({ title: 'Erreur', message: 'Aucun ID d\'article fourni' });
-    return;
+    toast.error({ title: 'Erreur', message: 'Aucun ID d\'article fourni' })
+    return
   }
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
   try {
     // Récupérer les catégories via l'API
     const { data: categoriesRes, error: categoriesError } = await useFetch<{ id: string; name: string }[]>('/api/categories', {
       method: 'GET'
-    });
+    })
 
     if (categoriesError?.value) {
       toast.error({
         title: 'Erreur',
         message: categoriesError.value.message || 'Erreur lors du chargement des catégories'
-      });
-      return;
+      })
+      return
     }
 
-    categories.value = categoriesRes?.value || [];
+    categories.value = categoriesRes?.value || []
 
     // Récupérer les tags via l'API
     const { data: tagsRes, error: tagsError } = await useFetch<{ id: string; name: string }[]>('/api/tags', {
       method: 'GET'
-    });
+    })
 
     if (tagsError?.value) {
       toast.error({
         title: 'Erreur',
         message: tagsError.value.message || 'Erreur lors du chargement des tags'
-      });
-      return;
+      })
+      return
     }
 
-    tags.value = tagsRes?.value || [];
+    tags.value = tagsRes?.value || []
 
     // Récupérer les données de l'article
-    await fetchPost();
+    await fetchPost()
   } catch (err) {
-    console.error('Erreur lors du chargement des données', err);
+    console.error('Erreur lors du chargement des données', err)
     toast.error({
       title: 'Erreur',
       message: 'Une erreur est survenue lors du chargement des données'
-    });
+    })
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-});
+})
 </script>
 
 <template>
